@@ -1,0 +1,239 @@
+---
+title: "Problem Set 2"
+author: "Meghna"
+date: "2026-02-05"
+output: html_document
+---
+1 Problem to demonstrate that the population
+regression line is fixed, but least square regression line varies.
+Suppose the population regression line is given by Y = 2 + 3x, while the data
+comes from the model y= 2 + 3x+ ϵ.
+
+```{r}
+rm(list=ls())
+```
+
+Step 1: For x in the range [5,10] graph the population regression line.
+
+```{r}
+x_pop <- seq(5, 10, length.out = 100)
+y_pop <- 2 + 3 * x_pop
+
+plot(x_pop, y_pop, type = "l", lwd = 3, col = "black",
+     xlab = "X", ylab = "Y",
+     main = "Population vs Sample Regression Line")
+```
+
+Step 2: Generate xi(i = 1,2,..,n) from Uniform(5,10) and ϵi(i = 1,2,..,n)
+from N(0,42). Hence, compute y1,y2,..,yn.
+
+```{r}
+n <- 50
+set.seed(123)
+
+xi <- runif(n,5,10)
+ei <- rnorm(n,0,4)
+yi <- 2 + 3 * xi + ei 
+
+plot(x_pop, y_pop,type='l', lwd=4,
+     main="Population Regression Line with Sample points")
+
+points(xi,yi)
+```
+
+Step 3: On the basis of the data (xi,yi)(i = 1,2,..,n) generated in Step 2,
+report the least squares regression line.
+
+```{r}
+model1 <- lm(yi~xi)
+
+summary(model1)
+y_hat <- -0.09639+3.30540*xi 
+
+plot(x_pop, y_pop, type='l',lwd=2, 
+     main="Population Regression Line with Least Square Regression line ")
+
+lines(xi,y_hat,type='l',col="red",lty="dotted")
+
+legend("topleft",col=c("black","red"),lwd=c(2,1),legend=c("Population line","Sample line"),
+       lty=c("solid","dotted"))
+```
+
+Step 4: Repeat steps 2-3 five times. Graph the 5 least squares regression lines
+over the population regression line obtained in Step 1.
+Take n= 50. Set the seed as seed=123.
+Interpret the findings.
+
+```{r}
+set.seed(123)
+n <- 50
+
+# Create empty dataframe to store coefficients
+coef_df <- data.frame(
+  Intercept = numeric(),
+  Slope = numeric()
+)
+
+plot(x_pop, y_pop, type = "l", lwd = 3, col = "black",
+     xlab = "X", ylab = "Y",
+     main = "Population Regression Line with Sample Regression Lines")
+
+# Generate samples and add regression lines
+for(i in 1:5){
+  x <- runif(n, 5, 10)
+  eps <- rnorm(n, mean = 0, sd = 4)
+  y <- 2 + 3 * x + eps
+  
+  fit <- lm(y ~ x)
+  
+  # Store coefficients
+  coef_df <- rbind(
+    coef_df,
+    data.frame(
+      Intercept = coef(fit)[1],
+      Slope = coef(fit)[2]
+    )
+  )
+  
+  # Add regression line
+  abline(fit, col = "red", lty = i)
+}
+
+legend("topleft",
+       legend = c("Population Line", "Sample Regression Lines"),
+       col = c("black", "red"),
+       lty = c(1, 2))
+
+# Display coefficient table
+coef_df
+```
+
+Interpretation:
+The population regression line remains fixed, while the least squares regression lines vary across samples. As sample size increases, these estimated lines tend to cluster around the population line.
+
+2 Problem to demonstrate that β0_hat and β_hat minimises RSS
+```{r}
+rm(list=ls())
+```
+
+Step 1: Generate xi from Uniform(5, 10) and mean centre the values. Generate
+ϵi from N(0,1). Calculate yi = 2 + 3xi + ϵi, i = 1,2,.., n. Take n=50 and
+seed=123.
+
+```{r}
+set.seed(123)
+n <- 50
+x <- runif(n, 5, 10)
+x <- x - mean(x)
+eps <- rnorm(n)
+y <- 2 + 3 * x + eps
+```
+
+Step 2: Now imagine that you only have the data on (xi,yi),i = 1,2,..,n,
+without knowing the mechanism that was used to generate the data in step 1.
+Assuming a linear regression of the type yi = β0 + βxi + ϵi, and based on these
+data (xi,yi),i= 1,2,..,n, obtain the least squares estimates of β0 and β.
+
+```{r}
+fit <- lm(y ~ x)
+coef(fit)
+```
+
+Step 3: Take a large number of grid values of (β0,β) that also include the least
+squares estimates obtained from step 2. Compute the RSS for each parametric
+choice of (β0,β), where RSS = (y1− β0− βx1)2 + (y2− β0− βx2)2 +....(yn−
+β0− βxn)2. Find out for which combination of (β0,β), RSS is minimum.
+
+```{r}
+b0_grid <- seq(0, 4, length = 50)
+b1_grid <- seq(1, 5, length = 50)
+RSS <- matrix(NA, nrow = 50, ncol = 50)
+
+for(i in 1:50){
+for(j in 1:50){
+RSS[i, j] <- sum((y - b0_grid[i] - b1_grid[j] * x)^2)
+}
+}
+
+min(RSS)
+```
+
+Interpretation:
+The Least Square Estimates minimizes the RSS.
+
+3 Problem to demonstrate that least square estimators are unbiased
+Step 1: Generate xi(i = 1,2,..,n) from Uniform(0,1), ϵi(i = 1,2,..,n) from
+N(0,1) and hence generate y using yi = β0 + βxi + ϵi. (Take β0 = 2,β = 3).
+
+```{r}
+n <- 50
+x <- runif(n, 0, 1)
+eps <- rnorm(n, 0, 1)
+y <- 2 + 3 * x + eps
+```
+
+Step 2: On the basis of the data (xi,yi)(i = 1,2,..,n) generated in Step 1,
+obtain the least square estimates of β0 and β.
+Repeat Steps 1-2, R= 1000 times. In each simulation obtain β0_hat and β_hat. Finally,
+the least square estimates will be given by the average of these estimated values.
+Compare these with the true β0 and β and comment.
+Take n= 50 and seed=123.
+
+```{r}
+set.seed(123)
+R <- 1000
+b0_hat <- numeric(R)
+b1_hat <- numeric(R)
+n <- 50
+
+for(i in 1:R){
+x <- runif(n, 0, 1)
+eps <- rnorm(n, 0, 1)
+y <- 2 + 3 * x + eps
+fit <- lm(y ~ x)
+b0_hat[i] <- coef(fit)[1]
+b1_hat[i] <- coef(fit)[2]
+}
+
+mean(b0_hat)
+mean(b1_hat)
+```
+
+Interpretation:
+The average of the estimated coefficients across simulations is very close to the true values, demonstrating that least squares estimators are unbiased.
+
+4 Comparing several simple linear regressions
+Attach “Boston” data from MASS library in R. Select median value of owner occupied homes, as the response and per capita crime rate, nitrogen oxides
+concentration, proportion of blacks and percentage of lower status of the popu-
+lation as predictors.
+
+```{r}
+library(MASS)
+data(Boston)
+```
+
+(a) Selecting the predictors one by one, run four separate linear regressions to
+the data. Present the output in a single table.
+
+```{r}
+fit1 <- lm(medv ~ crim, data = Boston)
+fit2 <- lm(medv ~ nox, data = Boston)
+fit3 <- lm(medv ~ black, data = Boston)
+fit4 <- lm(medv ~ lstat, data = Boston)
+
+summary(fit1)
+summary(fit2)
+summary(fit3)
+summary(fit4)
+```
+
+(b) Which model gives the best fit?
+
+Among all models, the regression using lstat as predictor provides the highest R-squared value, indicating the best fit.
+
+(c) Compare the coefficients of the predictors from each model and comment on
+the usefulness of the predictors.
+
+crim and nox have negative effects on house prices.
+black shows a weak relationship with medv.
+lstat is the strongest predictor, showing a strong negative association with median house value.
